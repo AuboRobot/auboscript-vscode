@@ -2,8 +2,6 @@
 
 Public VS Code support for AUBO Script/Lua files.
 
-The extension icon uses the AUBO logo in `images/aubo_logo_2.png`.
-
 ## API catalog
 
 The extension includes AUBO Lua API metadata for completion, hover
