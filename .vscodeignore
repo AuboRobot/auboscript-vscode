@@ -1,0 +1,18 @@
+# Only include public runtime files. Local catalogs stay outside every VSIX.
+**
+!package.json
+!images/aubo_logo_2.png
+!README.md
+!CHANGELOG.md
+!LICENSE
+!out/catalog.js
+!out/catalog-path.js
+!out/api-context.js
+!out/lua-syntax.js
+!out/lua-stubs.js
+!out/extension.js
+!api/catalog.json
+!api/catalog.schema.json
+!language-configuration.json
+!syntaxes/aubo-script.tmLanguage.json
+!snippets/aubo-script.json

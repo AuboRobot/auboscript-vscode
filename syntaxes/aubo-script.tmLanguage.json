@@ -1,0 +1,28 @@
+{
+  "name": "AUBO Script",
+  "scopeName": "source.aubo-script",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "match": "\\b(and|break|do|else|elseif|end|for|function|goto|if|in|local|not|or|repeat|return|then|until|while)\\b", "name": "keyword.control.lua" },
+    { "match": "\\b(true|false|nil)\\b", "name": "constant.language.lua" },
+    { "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()", "name": "entity.name.function.lua" },
+    { "match": "\\b(?:0[xX][0-9a-fA-F]+|[0-9]+(?:\\.[0-9]*)?(?:[eE][+-]?[0-9]+)?)\\b", "name": "constant.numeric.lua" },
+    { "match": "(?:==|~=|<=|>=|\\.\\.|//|[+*/%^#=<>%-])", "name": "keyword.operator.lua" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "begin": "--\\[\\[", "end": "\\]\\]", "name": "comment.block.lua" },
+        { "match": "--.*$", "name": "comment.line.lua" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        { "begin": "\\[\\[", "end": "\\]\\]", "name": "string.quoted.other.lua" },
+        { "begin": "\"", "end": "\"", "name": "string.quoted.double.lua", "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.lua" }] },
+        { "begin": "'", "end": "'", "name": "string.quoted.single.lua", "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.lua" }] }
+      ]
+    }
+  }
+}

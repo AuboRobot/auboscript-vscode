@@ -1,0 +1,17 @@
+node_modules/
+out/
+*.vsix
+api/catalog.local.json
+.aubo/
+# VS Code C/C++ index is local, large, and may contain absolute workspace paths.
+.vscode/*.db
+.vscode/*.db-*
+# Keep only the portable extension debug launcher; editor machine settings stay local.
+.vscode/*
+!.vscode/launch.json
+docs/superpowers/
+.env
+.env.*
+!.env.example
+*.pem
+*.key

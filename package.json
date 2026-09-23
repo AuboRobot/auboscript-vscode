@@ -1,0 +1,98 @@
+{
+  "name": "auboscript-vscode",
+  "displayName": "AUBOScript for VS Code",
+  "description": "AUBO Lua script editing with API completion, hover, signatures, and diagnostics.",
+  "version": "0.1.0",
+  "publisher": "aubo-robotics",
+  "icon": "images/aubo_logo_2.png",
+  "license": "MIT",
+  "engines": {
+    "vscode": ">=1.85.0",
+    "node": ">=16.14.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:aubo-script",
+    "onLanguage:lua"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "aubo-script",
+                "aliases": [
+                    "AUBO Script",
+                    "aubo-script"
+                ],
+                "extensions": [
+                    ".lua"
+                ],
+                "configuration": "./language-configuration.json",
+        "firstLine": "^#!.*\\baubo-script\\b"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "aubo-script",
+        "scopeName": "source.aubo-script",
+        "path": "./syntaxes/aubo-script.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "aubo-script",
+        "path": "./snippets/aubo-script.json"
+      },
+      {
+        "language": "lua",
+        "path": "./snippets/aubo-script.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "aubo.openApiCatalog",
+        "title": "AUBO: Open API Catalog"
+      },
+      {
+        "command": "aubo.reloadApiCatalog",
+        "title": "AUBO: Reload API Catalog"
+      },
+      {
+        "command": "aubo.refreshAiContext",
+        "title": "AUBO: Refresh AI API Context"
+      }
+    ],
+    "configurationDefaults": {
+      "Lua.completion.callSnippet": "Replace"
+    },
+    "configuration": {
+      "title": "AUBOScript for VS Code",
+      "properties": {
+        "aubo.apiCatalogPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to an additional AUBO API catalog; overrides the bundled catalog."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run compile",
+    "test": "npm run compile && node test/catalog.test.js && node test/catalog-path.test.js && node test/generate-catalog.test.js && node test/update-catalog.test.js && node test/export-public-catalog.test.js && node test/extension.test.js && node test/lua-syntax.test.js && node test/lua-stubs.test.js && node test/api-context.test.js && node test/package.test.js && node test/full-flow.test.js",
+    "generate-catalog": "node tools/generate-catalog.js",
+    "export-public-catalog": "node tools/export-public-catalog.js api/catalog.local.json api/catalog.json",
+    "update-catalog": "node tools/update-catalog.js",
+    "test:package": "node test/package.test.js",
+    "package": "npm run compile && npm run test:package && node node_modules/@vscode/vsce/vsce package --no-dependencies --allow-missing-repository --no-rewrite-relative-links"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "1.85.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "2.20.0"
+  }
+}
