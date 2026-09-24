@@ -1,0 +1,1494 @@
+{
+  "schemaVersion": 1,
+  "types": [
+    {
+      "name": "CircleParameters",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "a",
+          "type": "number"
+        },
+        {
+          "name": "blend_radius",
+          "type": "number"
+        },
+        {
+          "name": "direction",
+          "type": "number"
+        },
+        {
+          "name": "duration",
+          "type": "number"
+        },
+        {
+          "name": "helix",
+          "type": "number"
+        },
+        {
+          "name": "loop_times",
+          "type": "number"
+        },
+        {
+          "name": "pose_to",
+          "type": "number[]"
+        },
+        {
+          "name": "pose_via",
+          "type": "number[]"
+        },
+        {
+          "name": "spiral",
+          "type": "number"
+        },
+        {
+          "name": "v",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "ConveyorCalibResult",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "number"
+        },
+        {
+          "name": "limit",
+          "type": "number"
+        },
+        {
+          "name": "sensor_offset",
+          "type": "number"
+        },
+        {
+          "name": "tick_per_unit",
+          "type": "number"
+        },
+        {
+          "name": "track_ref",
+          "type": "number[]"
+        },
+        {
+          "name": "window_max",
+          "type": "number"
+        },
+        {
+          "name": "window_min",
+          "type": "number"
+        },
+        {
+          "name": "work_length",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "RobotMsg",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "args",
+          "type": "string[]"
+        },
+        {
+          "name": "code",
+          "type": "number"
+        },
+        {
+          "name": "level",
+          "type": "TraceLevel"
+        },
+        {
+          "name": "source",
+          "type": "string"
+        },
+        {
+          "name": "timestamp",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "RobotSafetyParameterRange",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "allow_manual_high_speed",
+          "type": "number"
+        },
+        {
+          "name": "crc32",
+          "type": "number"
+        },
+        {
+          "name": "cubic",
+          "type": "SafetyCubic[]"
+        },
+        {
+          "name": "params",
+          "type": "SafetyParams[]"
+        },
+        {
+          "name": "safety_home",
+          "type": "number[]"
+        },
+        {
+          "name": "safety_input_auto_safeguard_reset",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_emergency_stop",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_handguide",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_operational_mode",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_reduced_mode",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_safeguard_reset",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_safeguard_stop",
+          "type": "number"
+        },
+        {
+          "name": "safety_input_three_position_switch",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_emergency_stop",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_not_emergency_stop",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_not_reduced_mode",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_reduced_mode",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_robot_moving",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_robot_not_stopping",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_robot_steady",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_safe_home",
+          "type": "number"
+        },
+        {
+          "name": "safety_output_safetyguard_stop",
+          "type": "number"
+        },
+        {
+          "name": "tool_azimuth",
+          "type": "number"
+        },
+        {
+          "name": "tool_inclination",
+          "type": "number"
+        },
+        {
+          "name": "tools",
+          "type": "number[][]"
+        },
+        {
+          "name": "tp_3pe_for_handguide",
+          "type": "number"
+        },
+        {
+          "name": "trigger_planes",
+          "type": "TriggerPlane[]"
+        }
+      ]
+    },
+    {
+      "name": "RtdeRecipe",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "chanel",
+          "type": "number"
+        },
+        {
+          "name": "frequency",
+          "type": "number"
+        },
+        {
+          "name": "segments",
+          "type": "string[]"
+        },
+        {
+          "name": "to_server",
+          "type": "boolean"
+        },
+        {
+          "name": "trigger",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "SafetyCubic",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "orig",
+          "type": "number[]"
+        },
+        {
+          "name": "restrict_elbow",
+          "type": "number"
+        },
+        {
+          "name": "size",
+          "type": "number[]"
+        }
+      ]
+    },
+    {
+      "name": "SafetyParams",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "elbow_force",
+          "type": "number"
+        },
+        {
+          "name": "elbow_speed",
+          "type": "number"
+        },
+        {
+          "name": "joint_torque",
+          "type": "number[]"
+        },
+        {
+          "name": "momentum",
+          "type": "number"
+        },
+        {
+          "name": "planes",
+          "type": "number[][]"
+        },
+        {
+          "name": "power",
+          "type": "number"
+        },
+        {
+          "name": "qdmax",
+          "type": "number[]"
+        },
+        {
+          "name": "qmax",
+          "type": "number[]"
+        },
+        {
+          "name": "qmin",
+          "type": "number[]"
+        },
+        {
+          "name": "reduced_entry_distance",
+          "type": "number"
+        },
+        {
+          "name": "reduced_entry_time",
+          "type": "number"
+        },
+        {
+          "name": "restrict_elbow",
+          "type": "number[]"
+        },
+        {
+          "name": "stop_distance",
+          "type": "number"
+        },
+        {
+          "name": "stop_time",
+          "type": "number"
+        },
+        {
+          "name": "tcp_force",
+          "type": "number"
+        },
+        {
+          "name": "tcp_speed",
+          "type": "number"
+        },
+        {
+          "name": "tool_deviation",
+          "type": "number"
+        },
+        {
+          "name": "tool_orientation",
+          "type": "number[]"
+        }
+      ]
+    },
+    {
+      "name": "SpiralParameters",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "angle",
+          "type": "number"
+        },
+        {
+          "name": "frame",
+          "type": "number[]"
+        },
+        {
+          "name": "helix",
+          "type": "number"
+        },
+        {
+          "name": "plane",
+          "type": "number"
+        },
+        {
+          "name": "spiral",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "TriggerPlane",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "plane",
+          "type": "number[]"
+        },
+        {
+          "name": "restrict_elbow",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "VibrationRecalibrationParameter",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "cog",
+          "type": "number[]"
+        },
+        {
+          "name": "inertia",
+          "type": "number[]"
+        },
+        {
+          "name": "mass",
+          "type": "number"
+        },
+        {
+          "name": "points",
+          "type": "number[][]"
+        },
+        {
+          "name": "stiff_param",
+          "type": "number[][]"
+        },
+        {
+          "name": "stiff_section",
+          "type": "number[][]"
+        }
+      ]
+    },
+    {
+      "name": "WorldZone",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "base_vertex",
+          "type": "number[]"
+        },
+        {
+          "name": "brake_margin",
+          "type": "number"
+        },
+        {
+          "name": "enabled",
+          "type": "boolean"
+        },
+        {
+          "name": "id",
+          "type": "number"
+        },
+        {
+          "name": "margin",
+          "type": "number"
+        },
+        {
+          "name": "occupied_active_high",
+          "type": "boolean"
+        },
+        {
+          "name": "occupied_do_index",
+          "type": "number"
+        },
+        {
+          "name": "opposite_vertex",
+          "type": "number[]"
+        },
+        {
+          "name": "outside",
+          "type": "boolean"
+        },
+        {
+          "name": "permit_active_high",
+          "type": "boolean"
+        },
+        {
+          "name": "permit_di_index",
+          "type": "number"
+        },
+        {
+          "name": "tool_radius",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "WorldZoneState",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "any_occupied",
+          "type": "boolean"
+        },
+        {
+          "name": "blocking",
+          "type": "boolean"
+        },
+        {
+          "name": "blocking_ids",
+          "type": "number[]"
+        },
+        {
+          "name": "holding",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "name": "WObjectData",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "remote_tool",
+          "type": "boolean"
+        },
+        {
+          "name": "attach_frame",
+          "type": "string"
+        },
+        {
+          "name": "user_coord",
+          "type": "number[]"
+        },
+        {
+          "name": "obj_coord",
+          "type": "number[]"
+        }
+      ]
+    },
+    {
+      "name": "GripperStatus",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "is_connected",
+          "type": "boolean"
+        },
+        {
+          "name": "is_enabled",
+          "type": "boolean"
+        },
+        {
+          "name": "position",
+          "type": "number"
+        },
+        {
+          "name": "velocity",
+          "type": "number"
+        },
+        {
+          "name": "force",
+          "type": "number"
+        },
+        {
+          "name": "angle",
+          "type": "number"
+        },
+        {
+          "name": "r_velocity",
+          "type": "number"
+        },
+        {
+          "name": "torque",
+          "type": "number"
+        },
+        {
+          "name": "object_detection",
+          "type": "boolean"
+        },
+        {
+          "name": "motion_state",
+          "type": "boolean"
+        },
+        {
+          "name": "voltage",
+          "type": "number"
+        },
+        {
+          "name": "temperature",
+          "type": "number"
+        },
+        {
+          "name": "status_code",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "Enveloping",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "shape",
+          "type": "EnvelopingShape"
+        },
+        {
+          "name": "ep_args",
+          "type": "number[]"
+        },
+        {
+          "name": "stl_path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "TrajConfig",
+      "kind": "record",
+      "fields": [
+        {
+          "name": "envelopings",
+          "type": "Enveloping[]"
+        },
+        {
+          "name": "move_axis",
+          "type": "PayloadIdentifyMoveAxis"
+        },
+        {
+          "name": "init_joint",
+          "type": "number[]"
+        },
+        {
+          "name": "upper_joint_bound",
+          "type": "number[]"
+        },
+        {
+          "name": "lower_joint_bound",
+          "type": "number[]"
+        },
+        {
+          "name": "max_velocity",
+          "type": "number[]"
+        },
+        {
+          "name": "max_acceleration",
+          "type": "number[]"
+        }
+      ]
+    },
+    {
+      "name": "Vector3f",
+      "kind": "alias",
+      "alias": "number[]"
+    },
+    {
+      "name": "Vector4f",
+      "kind": "alias",
+      "alias": "number[]"
+    },
+    {
+      "name": "Vector6f",
+      "kind": "alias",
+      "alias": "number[]"
+    },
+    {
+      "name": "AuboErrorCodes",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "AUBO_ALGORITHM_PLAN_FAILED"
+        },
+        {
+          "name": "AUBO_BADSTATE_FORCE_CTRL_ACTIVE"
+        },
+        {
+          "name": "AUBO_BADSTATE_FREE_DRIVE_ACTIVE"
+        },
+        {
+          "name": "AUBO_BADSTATE_INVALID_ROBOT_MODE"
+        },
+        {
+          "name": "AUBO_BADSTATE_INVALID_SAFETY_MODE"
+        },
+        {
+          "name": "AUBO_BADSTATE_KINEMATICS_COMPENSATE_FAILED"
+        },
+        {
+          "name": "AUBO_BADSTATE_MB_ERROR"
+        },
+        {
+          "name": "AUBO_BADSTATE_MB_TIMEOUT"
+        },
+        {
+          "name": "AUBO_BADSTATE_PSTOP"
+        },
+        {
+          "name": "AUBO_BADSTATE_ROBOT_ESTOP"
+        },
+        {
+          "name": "AUBO_BADSTATE_ROBOT_NOT_POWERED_OFF"
+        },
+        {
+          "name": "AUBO_BADSTATE_ROBOT_NOT_RUNNING"
+        },
+        {
+          "name": "AUBO_BADSTATE_ROBOT_NOT_STEADY"
+        },
+        {
+          "name": "AUBO_BADSTATE_RTM_ABORTING"
+        },
+        {
+          "name": "AUBO_BADSTATE_RTM_NOT_PAUSED"
+        },
+        {
+          "name": "AUBO_BADSTATE_RTM_NOT_STARTED"
+        },
+        {
+          "name": "AUBO_BADSTATE_RTM_NOT_STOPPED"
+        },
+        {
+          "name": "AUBO_BADSTATE_SERIAL_CONFIG_FAILED"
+        },
+        {
+          "name": "AUBO_BADSTATE_SERIAL_NOT_A_TERMINAL"
+        },
+        {
+          "name": "AUBO_BADSTATE_SERIAL_OPEN_FAILED"
+        },
+        {
+          "name": "AUBO_BADSTATE_SIMULATION_MODE_ACTIVE"
+        },
+        {
+          "name": "AUBO_BADSTATE_SYSTEM_ESTOP"
+        },
+        {
+          "name": "AUBO_BADSTATE_TASK_NOT_FOUND"
+        },
+        {
+          "name": "AUBO_BADSTATE_THREAD_DETACHED"
+        },
+        {
+          "name": "AUBO_BADSTATE_THREAD_KILLED"
+        },
+        {
+          "name": "AUBO_BAD_STATE"
+        },
+        {
+          "name": "AUBO_BUSY"
+        },
+        {
+          "name": "AUBO_CONN_REFUSED"
+        },
+        {
+          "name": "AUBO_CONN_RESET"
+        },
+        {
+          "name": "AUBO_DIMENSION_ERR"
+        },
+        {
+          "name": "AUBO_EIO"
+        },
+        {
+          "name": "AUBO_ELP_SETTING_ERR"
+        },
+        {
+          "name": "AUBO_ERR_UNKOWN"
+        },
+        {
+          "name": "AUBO_IK_CONFIG_DISMATCH"
+        },
+        {
+          "name": "AUBO_IK_JACOBIAN_FAILED"
+        },
+        {
+          "name": "AUBO_IK_NO_CONVERGE"
+        },
+        {
+          "name": "AUBO_IK_NO_SOLU"
+        },
+        {
+          "name": "AUBO_IK_OUT_OF_RANGE"
+        },
+        {
+          "name": "AUBO_IK_UNKOWN_ERROR"
+        },
+        {
+          "name": "AUBO_INIT_POS_ERR"
+        },
+        {
+          "name": "AUBO_INPROGRESS"
+        },
+        {
+          "name": "AUBO_INST_QUEUED"
+        },
+        {
+          "name": "AUBO_INTERNAL_ERR"
+        },
+        {
+          "name": "AUBO_INVALID_FILE_PATH"
+        },
+        {
+          "name": "AUBO_INVL_ARGUMENT"
+        },
+        {
+          "name": "AUBO_MOVE_IGNORED_SERVOMODE"
+        },
+        {
+          "name": "AUBO_MOVE_INVALID_ACCELERATION_VALUE"
+        },
+        {
+          "name": "AUBO_MOVE_INVALID_SPEED_VALUE"
+        },
+        {
+          "name": "AUBO_NOBUFFS"
+        },
+        {
+          "name": "AUBO_NOT_IMPLETEMENT"
+        },
+        {
+          "name": "AUBO_NO_ACCESS"
+        },
+        {
+          "name": "AUBO_OK"
+        },
+        {
+          "name": "AUBO_POS_BOUND_ERR"
+        },
+        {
+          "name": "AUBO_QUEUE_FULL"
+        },
+        {
+          "name": "AUBO_REQUEST_IGNORE"
+        },
+        {
+          "name": "AUBO_SINGULAR_ERR"
+        },
+        {
+          "name": "AUBO_TIMEOUT"
+        },
+        {
+          "name": "AUBO_TRAJ_GEN_FAIL"
+        },
+        {
+          "name": "AUBO_TRAJ_SELF_COLLISION"
+        },
+        {
+          "name": "AUBO_VERSION_INCOMPAT"
+        }
+      ]
+    },
+    {
+      "name": "RuntimeState",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Aborting"
+        },
+        {
+          "name": "Paused"
+        },
+        {
+          "name": "Pausing"
+        },
+        {
+          "name": "Retracting"
+        },
+        {
+          "name": "Running"
+        },
+        {
+          "name": "Stepping"
+        },
+        {
+          "name": "Stopped"
+        },
+        {
+          "name": "Stopping"
+        }
+      ]
+    },
+    {
+      "name": "RobotModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "BackDrive"
+        },
+        {
+          "name": "Booting"
+        },
+        {
+          "name": "BrakeReleasing"
+        },
+        {
+          "name": "ConfirmSafety"
+        },
+        {
+          "name": "Disconnected"
+        },
+        {
+          "name": "Error"
+        },
+        {
+          "name": "Idle"
+        },
+        {
+          "name": "Maintaince"
+        },
+        {
+          "name": "NoController"
+        },
+        {
+          "name": "PowerOff"
+        },
+        {
+          "name": "PowerOffing"
+        },
+        {
+          "name": "PowerOn"
+        },
+        {
+          "name": "Running"
+        }
+      ]
+    },
+    {
+      "name": "SafeguedStopType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "None"
+        },
+        {
+          "name": "SafeguedStopIOInput"
+        },
+        {
+          "name": "SafeguedStop3PE"
+        },
+        {
+          "name": "SafeguedStopOperational"
+        }
+      ]
+    },
+    {
+      "name": "AxisModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "NoController"
+        },
+        {
+          "name": "Disconnected"
+        },
+        {
+          "name": "PowerOff"
+        },
+        {
+          "name": "BrakeReleasing"
+        },
+        {
+          "name": "Idle"
+        },
+        {
+          "name": "Running"
+        },
+        {
+          "name": "Fault"
+        }
+      ]
+    },
+    {
+      "name": "SafetyModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Fault"
+        },
+        {
+          "name": "Normal"
+        },
+        {
+          "name": "ProtectiveStop"
+        },
+        {
+          "name": "Recovery"
+        },
+        {
+          "name": "ReducedMode"
+        },
+        {
+          "name": "RobotEmergencyStop"
+        },
+        {
+          "name": "SafeguardStop"
+        },
+        {
+          "name": "SystemEmergencyStop"
+        },
+        {
+          "name": "Undefined"
+        },
+        {
+          "name": "Violation"
+        }
+      ]
+    },
+    {
+      "name": "OperationalModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Automatic"
+        },
+        {
+          "name": "Disabled"
+        },
+        {
+          "name": "Manual"
+        }
+      ]
+    },
+    {
+      "name": "RobotControlModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Collision"
+        },
+        {
+          "name": "Force"
+        },
+        {
+          "name": "Freedrive"
+        },
+        {
+          "name": "Position"
+        },
+        {
+          "name": "Servo"
+        },
+        {
+          "name": "Speed"
+        },
+        {
+          "name": "Torque"
+        },
+        {
+          "name": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "JointServoModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Current"
+        },
+        {
+          "name": "Open"
+        },
+        {
+          "name": "Position"
+        },
+        {
+          "name": "Torque"
+        },
+        {
+          "name": "Unknown"
+        },
+        {
+          "name": "Velocity"
+        }
+      ]
+    },
+    {
+      "name": "JointStateType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Bootload"
+        },
+        {
+          "name": "Fault"
+        },
+        {
+          "name": "Idle"
+        },
+        {
+          "name": "Poweroff"
+        },
+        {
+          "name": "Running"
+        }
+      ]
+    },
+    {
+      "name": "StandardInputAction",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "ArbitraryResumeProgram"
+        },
+        {
+          "name": "ConveyorTrack"
+        },
+        {
+          "name": "Default"
+        },
+        {
+          "name": "GoHome"
+        },
+        {
+          "name": "Handguide"
+        },
+        {
+          "name": "MoveToFirstPoint"
+        },
+        {
+          "name": "PauseProgram"
+        },
+        {
+          "name": "PopupDismiss"
+        },
+        {
+          "name": "PowerOff"
+        },
+        {
+          "name": "PowerOn"
+        },
+        {
+          "name": "ResumeProgram"
+        },
+        {
+          "name": "RunningGuard"
+        },
+        {
+          "name": "SafeStop"
+        },
+        {
+          "name": "SlowDown1"
+        },
+        {
+          "name": "SlowDown2"
+        },
+        {
+          "name": "StartProgram"
+        },
+        {
+          "name": "StopProgram"
+        },
+        {
+          "name": "UnlockProtectiveStop"
+        },
+        {
+          "name": "xConveyorTrack"
+        },
+        {
+          "name": "xSlowDown1"
+        },
+        {
+          "name": "xSlowDown2"
+        }
+      ]
+    },
+    {
+      "name": "StandardOutputRunState",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "None"
+        },
+        {
+          "name": "AtHome"
+        },
+        {
+          "name": "ExternalEmergencyStop"
+        },
+        {
+          "name": "Handguiding"
+        },
+        {
+          "name": "InternalEmergencyStop"
+        },
+        {
+          "name": "NotSystemError"
+        },
+        {
+          "name": "OperationalMode"
+        },
+        {
+          "name": "PausedHigh"
+        },
+        {
+          "name": "PowerOn"
+        },
+        {
+          "name": "ProgramAborted"
+        },
+        {
+          "name": "ProtectiveStop"
+        },
+        {
+          "name": "RobotEmergencyStop"
+        },
+        {
+          "name": "RobotOperable"
+        },
+        {
+          "name": "RunningHigh"
+        },
+        {
+          "name": "SafeguardStop"
+        },
+        {
+          "name": "StopHigh"
+        },
+        {
+          "name": "StopLow"
+        },
+        {
+          "name": "SystemEmergencyStop"
+        },
+        {
+          "name": "SystemError"
+        },
+        {
+          "name": "WaypointArrived"
+        }
+      ]
+    },
+    {
+      "name": "SafetyInputAction",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "AutomaticModeSafeguardReset"
+        },
+        {
+          "name": "AutomaticModeSafeguardStop"
+        },
+        {
+          "name": "EmergencyStop"
+        },
+        {
+          "name": "HandGuide"
+        },
+        {
+          "name": "OperationalMode"
+        },
+        {
+          "name": "ReducedMode"
+        },
+        {
+          "name": "SafeguardReset"
+        },
+        {
+          "name": "SafeguardStop"
+        },
+        {
+          "name": "ThreePositionSwitch"
+        },
+        {
+          "name": "Unassigned"
+        }
+      ]
+    },
+    {
+      "name": "SafetyOutputRunState",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "NotReducedMode"
+        },
+        {
+          "name": "NotSystemEmergencyStop"
+        },
+        {
+          "name": "ReducedMode"
+        },
+        {
+          "name": "RobotMoving"
+        },
+        {
+          "name": "RobotNotMoving"
+        },
+        {
+          "name": "RobotNotStopping"
+        },
+        {
+          "name": "SafeHome"
+        },
+        {
+          "name": "SystemEmergencyStop"
+        },
+        {
+          "name": "Unassigned"
+        }
+      ]
+    },
+    {
+      "name": "TaskFrameType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "FRAME_FORCE"
+        },
+        {
+          "name": "MOTION_FORCE"
+        },
+        {
+          "name": "NONE"
+        },
+        {
+          "name": "POINT_FORCE"
+        },
+        {
+          "name": "TOOL_FORCE"
+        }
+      ]
+    },
+    {
+      "name": "TraceLevel",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "DEBUG"
+        },
+        {
+          "name": "ERROR"
+        },
+        {
+          "name": "FATAL"
+        },
+        {
+          "name": "INFO"
+        },
+        {
+          "name": "WARNING"
+        }
+      ]
+    },
+    {
+      "name": "HandleStateType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Connected"
+        },
+        {
+          "name": "Disconnected"
+        },
+        {
+          "name": "Fault"
+        },
+        {
+          "name": "Init"
+        },
+        {
+          "name": "Lock"
+        }
+      ]
+    },
+    {
+      "name": "HandleModeType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Default"
+        },
+        {
+          "name": "MultiFuncG1"
+        },
+        {
+          "name": "None"
+        },
+        {
+          "name": "TPMultiFuncG1"
+        }
+      ]
+    },
+    {
+      "name": "RobotIOType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "ConfigurableDigitalInput"
+        },
+        {
+          "name": "ConfigurableDigitalOutput"
+        },
+        {
+          "name": "IONone"
+        },
+        {
+          "name": "StandardAnalogInput"
+        },
+        {
+          "name": "StandardAnalogOutput"
+        },
+        {
+          "name": "StandardDigitalInput"
+        },
+        {
+          "name": "StandardDigitalOutput"
+        },
+        {
+          "name": "ToolAnalogInput"
+        },
+        {
+          "name": "ToolAnalogOutput"
+        },
+        {
+          "name": "ToolDigitalInput"
+        },
+        {
+          "name": "ToolDigitalOutput"
+        }
+      ]
+    },
+    {
+      "name": "HandleProgramState",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "None"
+        },
+        {
+          "name": "Start"
+        },
+        {
+          "name": "Pause"
+        },
+        {
+          "name": "Resume"
+        },
+        {
+          "name": "Stop"
+        }
+      ]
+    },
+    {
+      "name": "EnvelopingShape",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Cube"
+        },
+        {
+          "name": "Column"
+        },
+        {
+          "name": "Stl"
+        }
+      ]
+    },
+    {
+      "name": "PayloadIdentifyMoveAxis",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Joint_2_6"
+        },
+        {
+          "name": "Joint_3_6"
+        },
+        {
+          "name": "Joint_4_6"
+        },
+        {
+          "name": "Joint_4_5_6"
+        }
+      ]
+    },
+    {
+      "name": "ForceControlState",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "Stopped"
+        },
+        {
+          "name": "Starting"
+        },
+        {
+          "name": "Stropping"
+        },
+        {
+          "name": "Running"
+        }
+      ]
+    },
+    {
+      "name": "RefFrameType",
+      "kind": "enum",
+      "values": [
+        {
+          "name": "None"
+        },
+        {
+          "name": "Tool"
+        },
+        {
+          "name": "Path"
+        },
+        {
+          "name": "Base"
+        }
+      ]
+    }
+  ]
+}

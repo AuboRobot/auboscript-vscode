@@ -5,7 +5,10 @@ const path = require('path');
 const { resolveCppSdk } = require('../out/cpp-sdk.js');
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aubo-cpp-sdk-'));
-const headers = ['aubo_sdk/rpc.h', 'aubo/robot/motion_control.h', 'aubo/global_config.h'];
+const headers = [
+  'aubo_sdk/rpc.h', 'aubo/robot/motion_control.h', 'aubo/global_config.h',
+  'aubo/aubo_api.h', 'aubo/type_def.h'
+];
 
 function installHeaders(directory, filenames = headers) {
   for (const filename of filenames) {
@@ -23,6 +26,11 @@ try {
   assert.deepEqual(resolveCppSdk(prefix), expected);
   assert.deepEqual(resolveCppSdk(include), expected);
   assert.deepEqual(resolveCppSdk(`${prefix}${path.sep}`), expected);
+  assert.deepEqual(resolveCppSdk('SDK with spaces', root), expected,
+    'relative SDK paths must resolve against their workspace, not the extension host cwd');
+  assert.deepEqual(resolveCppSdk(path.join('SDK with spaces', 'include'), root), expected);
+  assert.deepEqual(resolveCppSdk(prefix, path.join(root, 'unrelated')), expected,
+    'workspace root must not change an absolute SDK path');
   installHeaders(path.join(prefix, 'aubo_sdk-backup', 'include'));
   assert.deepEqual(resolveCppSdk(prefix), expected);
 
@@ -43,6 +51,12 @@ try {
   assert.throws(() => resolveCppSdk(incomplete), /aubo\/robot\/motion_control\.h/);
   installHeaders(path.join(incomplete, 'include'), ['aubo/robot/motion_control.h']);
   assert.throws(() => resolveCppSdk(incomplete), /aubo\/global_config\.h/);
+  installHeaders(path.join(incomplete, 'include'), ['aubo/global_config.h']);
+  assert.throws(() => resolveCppSdk(incomplete), /aubo\/aubo_api\.h/,
+    'SDK without its public API entry point must be rejected');
+  installHeaders(path.join(incomplete, 'include'), ['aubo/aubo_api.h']);
+  assert.throws(() => resolveCppSdk(incomplete), /aubo\/type_def\.h/,
+    'SDK without its public structure and enum definitions must be rejected');
 
   const fakeHeader = path.join(root, 'fake-header');
   installHeaders(fakeHeader, headers.slice(1));

@@ -18,6 +18,11 @@ When a workspace is open, activation writes API context to
 agents and LuaLS the same names and signatures as the extension. Run
 **AUBO: Refresh AI API Context** after changing the catalog.
 
+The bundled catalog also contains the public SDK records, aliases, and enum
+names used by the Lua binding. Generated stubs include nested fields and array
+element types, for example `SpiralParameters.frame` and
+`RobotSafetyParameterRange.params[1].tcp_force`.
+
 ## 使用
 
 ### 开发调试
@@ -40,12 +45,27 @@ Python extension with Pylance (or Pyright) to use the signatures in `.py` files.
 The metadata is copied to `.aubo/python` when a workspace is open so editor AI
 agents can inspect the same public names.
 
-For C++, install the Microsoft C/C++ extension and set `aubo.cppSdkPath` to an
-AUBO SDK installation directory. The extension discovers the SDK's include
-directory and adds it to the workspace C/C++ include paths; headers and
-libraries stay on the machine where the SDK is installed. Projects using clangd
-or `compile_commands.json` should add the same SDK include directory to their
-build configuration.
+For C++, install the Microsoft C/C++ extension (or clangd) and set
+`aubo.cppSdkPath` to the complete AUBO SDK installation directory. The extension
+discovers the public include directory and adds it to the workspace C/C++
+include paths; the native language service then supplies the SDK's classes,
+structs, enums, aliases, fields, and overloads. Headers and libraries stay on
+the machine where the SDK is installed. Projects using clangd or
+`compile_commands.json` should add the same include directory to their build
+configuration. A minimal check is:
+
+```cpp
+#include <aubo_sdk/rpc.h>
+#include <aubo/type_def.h>
+
+arcs::aubo_sdk::RpcClient client;
+arcs::common_interface::SpiralParameters spiral;
+spiral.frame;
+client.getRobotInterface("rob1");
+```
+
+The C++ configuration is workspace-relative on Windows as well as Linux, and
+the extension package never contains the installed SDK headers or libraries.
 
 ### 配置 API catalog
 

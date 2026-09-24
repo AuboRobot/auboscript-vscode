@@ -32,7 +32,7 @@ function registerProvider(selector, provider, ...triggers) {
 const vscode = {
   StatusBarAlignment: { Right: 2 },
   ConfigurationTarget: { Global: 1, WorkspaceFolder: 3 },
-  CompletionItemKind: { Class: 7, Method: 2, Field: 5 },
+  CompletionItemKind: { Class: 7, Method: 2, Field: 5, Function: 3, Constant: 21 },
   CompletionItem: class {
     constructor(label, kind) { this.label = label; this.kind = kind; }
   },
@@ -108,6 +108,19 @@ try {
     { line: 1, character: 7 });
   assert.ok(pythonItems.some((item) => item.label === 'getRobotInterface' && /arg0: str/.test(item.detail)),
     'Python provider must expose inherited SDK methods');
+  const aliasDocument = {
+    languageId: 'python',
+    lineAt() { return { text: 'sdk.' }; },
+    getText() {
+      return 'import pyaubo_sdk as sdk\nsdk.';
+    }
+  };
+  const aliasItems = pythonProvider.provider.provideCompletionItems(aliasDocument,
+    { line: 1, character: 4 });
+  assert.ok(aliasItems.some((item) => item.label === 'RpcClient' && item.kind === vscode.CompletionItemKind.Class),
+    'Python provider must resolve module import aliases');
+  assert.ok(aliasItems.some((item) => item.label === 'errorCode2Str' && item.kind === vscode.CompletionItemKind.Function),
+    'Python provider must expose module-level SDK functions');
   const structDocument = {
     languageId: 'python',
     lineAt() { return { text: 'params.' }; },
@@ -145,6 +158,29 @@ try {
   assert.ok(signature);
   assert.match(signature.signatures[0].label, /arg0: str/);
   assert.equal(signature.activeParameter, 1);
+
+  const functionDocument = {
+    languageId: 'python',
+    lineAt() { return { text: 'pyaubo_sdk.errorCode2Str(' }; },
+    getText() { return 'import pyaubo_sdk\npyaubo_sdk.errorCode2Str('; }
+  };
+  const functionSignature = pythonSignature.provider.provideSignatureHelp(functionDocument,
+    { line: 1, character: functionDocument.lineAt().text.length });
+  assert.ok(functionSignature);
+  assert.match(functionSignature.signatures[0].label, /^errorCode2Str\(arg0: int\) -> str$/,
+    'Python provider must expose module function signatures');
+
+  const overloadDocument = {
+    languageId: 'python',
+    lineAt() { return { text: 'writer.append(' }; },
+    getText() {
+      return 'writer = pyaubo_sdk.ScriptWriter()\nwriter.append('; }
+  };
+  const overloadSignature = pythonSignature.provider.provideSignatureHelp(overloadDocument,
+    { line: 1, character: overloadDocument.lineAt().text.length });
+  assert.ok(overloadSignature);
+  assert.equal(overloadSignature.signatures.length, 2,
+    'Python provider must preserve overloaded SDK method signatures');
 
   writeCatalog('test-sdk-2');
   commands.get('aubo.reloadApiCatalog')();

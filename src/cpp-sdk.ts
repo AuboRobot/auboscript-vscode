@@ -15,7 +15,9 @@ export interface CppSdkInfo {
 const requiredHeaders = [
   'aubo_sdk/rpc.h',
   'aubo/robot/motion_control.h',
-  'aubo/global_config.h'
+  'aubo/global_config.h',
+  'aubo/aubo_api.h',
+  'aubo/type_def.h'
 ];
 
 function isDirectory(filename: string): boolean {
@@ -69,18 +71,21 @@ function canonical(filename: string): string {
  *
  * `sdkRoot` may be an SDK prefix, its `include` directory, or an unpacked
  * archive directory containing one SDK directory with an `include` child.
+ * Relative paths are resolved against `baseDirectory` when provided.
  * Discovery is intentionally shallow so an unrelated directory tree cannot
  * accidentally be selected as an SDK. A source checkout is accepted only if
  * it has the complete installed header set, including generated common
  * interface headers.
  */
-export function resolveCppSdk(sdkRoot: string | undefined): CppSdkInfo {
+export function resolveCppSdk(sdkRoot: string | undefined, baseDirectory?: string): CppSdkInfo {
   const configured = sdkRoot?.trim() || '';
   if (!configured) {
     throw new Error('AUBO C++ SDK directory is not configured');
   }
 
-  const root = path.resolve(configured);
+  const root = path.isAbsolute(configured)
+    ? path.resolve(configured)
+    : path.resolve(baseDirectory || process.cwd(), configured);
   let rootStat: fs.Stats;
   try {
     rootStat = fs.statSync(root);

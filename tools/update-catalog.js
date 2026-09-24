@@ -6,6 +6,14 @@ function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function assertPublicString(value, field) {
+  if (typeof value !== 'string') return;
+  if (/^\/?(?:[A-Za-z]:[\\/]|root\/|home\/)|https?:\/\//i.test(value) ||
+      /(?:common_interface|aubo_sdk|aubo_script)/i.test(value)) {
+    throw new Error(`Refusing private or path-like catalog field: ${field}`);
+  }
+}
+
 function readJson(filename) {
   try {
     return JSON.parse(fs.readFileSync(filename, 'utf8'));
@@ -88,12 +96,85 @@ function validateCatalogShape(catalog) {
   if (catalog.sdkVersion === 'local-sdk') {
     throw new Error('Input catalog sdkVersion must be a real SDK version');
   }
+  if (catalog.types !== undefined) {
+    if (!Array.isArray(catalog.types)) throw new Error('Input catalog types are malformed');
+    const typeNames = new Set();
+    for (const type of catalog.types) {
+      if (!isRecord(type) || typeof type.name !== 'string' ||
+          !['record', 'enum', 'alias'].includes(type.kind)) {
+        throw new Error('Input catalog type is malformed');
+      }
+      if (typeNames.has(type.name)) throw new Error(`Input catalog contains duplicate type: ${type.name}`);
+      typeNames.add(type.name);
+      assertPublicString(type.name, 'types.name');
+      if (type.description !== undefined && typeof type.description !== 'string') {
+        throw new Error('Input catalog type description is malformed');
+      }
+      if (type.description !== undefined) assertPublicString(type.description, 'types.description');
+      if (type.kind === 'alias') {
+        if (typeof type.alias !== 'string' || !type.alias.trim()) throw new Error('Input catalog alias is malformed');
+        assertPublicString(type.alias, 'types.alias');
+      }
+      if (type.kind === 'record' && type.fields !== undefined) {
+        if (!Array.isArray(type.fields)) throw new Error('Input catalog type fields are malformed');
+        const fieldNames = new Set();
+        for (const field of type.fields) {
+          if (!isRecord(field) || typeof field.name !== 'string' || !field.name) throw new Error('Input catalog type field is malformed');
+          if (fieldNames.has(field.name)) throw new Error(`Input catalog contains duplicate field: ${type.name}.${field.name}`);
+          fieldNames.add(field.name);
+          assertPublicString(field.name, 'types.fields.name');
+          if (field.type !== undefined && typeof field.type !== 'string') throw new Error('Input catalog field type is malformed');
+          if (field.description !== undefined && typeof field.description !== 'string') throw new Error('Input catalog field description is malformed');
+          if (field.type !== undefined) assertPublicString(field.type, 'types.fields.type');
+          if (field.description !== undefined) assertPublicString(field.description, 'types.fields.description');
+        }
+      }
+      if (type.kind === 'enum' && type.values !== undefined) {
+        if (!Array.isArray(type.values)) throw new Error('Input catalog enum values are malformed');
+        const valueNames = new Set();
+        for (const value of type.values) {
+          if (!isRecord(value) || typeof value.name !== 'string' || !value.name ||
+              (value.value !== undefined && typeof value.value !== 'string' && typeof value.value !== 'number')) {
+            throw new Error('Input catalog enum value is malformed');
+          }
+          if (valueNames.has(value.name)) throw new Error(`Input catalog contains duplicate enum value: ${type.name}.${value.name}`);
+          valueNames.add(value.name);
+          assertPublicString(value.name, 'types.values.name');
+          if (typeof value.value === 'string') assertPublicString(value.value, 'types.values.value');
+          if (value.description !== undefined && typeof value.description !== 'string') throw new Error('Input catalog enum value description is malformed');
+          if (value.description !== undefined) assertPublicString(value.description, 'types.values.description');
+        }
+      }
+    }
+  }
 }
 
 function copyParameter(parameter) {
   const result = { name: parameter.name };
   for (const key of ['type', 'description']) {
     if (typeof parameter[key] === 'string') result[key] = parameter[key];
+  }
+  return result;
+}
+
+function copyType(type) {
+  const result = { name: type.name, kind: type.kind };
+  for (const key of ['description', 'alias']) {
+    if (typeof type[key] === 'string') result[key] = type[key];
+  }
+  if (type.kind === 'record' && Array.isArray(type.fields)) {
+    result.fields = type.fields.map((field) => ({
+      name: field.name,
+      ...(typeof field.type === 'string' ? { type: field.type } : {}),
+      ...(typeof field.description === 'string' ? { description: field.description } : {})
+    }));
+  }
+  if (type.kind === 'enum' && Array.isArray(type.values)) {
+    result.values = type.values.map((value) => ({
+      name: value.name,
+      ...(value.value === undefined ? {} : { value: value.value }),
+      ...(typeof value.description === 'string' ? { description: value.description } : {})
+    }));
   }
   return result;
 }
@@ -108,6 +189,7 @@ function sanitizeCatalog(catalog, macroValidation) {
     schemaVersion: 1,
     interfaceVersion: catalog.interfaceVersion,
     ...(typeof catalog.sdkVersion === 'string' ? { sdkVersion: catalog.sdkVersion } : {}),
+    ...(Array.isArray(catalog.types) ? { types: catalog.types.map(copyType) } : {}),
     modules: catalog.modules.map((module) => ({
       name: module.name,
       ...(typeof module.luaModule === 'string' ? { luaModule: module.luaModule } : {}),
@@ -217,7 +299,19 @@ if (require.main === module) {
       console.error('Usage: node tools/update-catalog.js <input.json> <catalog.json> [binding] [--expected-interface-version <version>]');
       process.exitCode = 2;
     } else {
-      const catalog = updateCatalog(input, output, options);
+      let source = readJson(input);
+      if (source.types === undefined) {
+        const publicTypes = path.join(__dirname, '..', 'api', 'public-types.json');
+        if (fs.existsSync(publicTypes)) {
+          try {
+            const metadata = readJson(publicTypes);
+            if (Array.isArray(metadata.types)) source = { ...source, types: metadata.types };
+          } catch {
+            // Keep catalog validation as the single error surface.
+          }
+        }
+      }
+      const catalog = updateCatalog(source, output, options);
       const methods = catalog.modules.reduce((count, module) => count + module.methods.length, 0);
       console.log(`Updated ${methods} API methods for ${catalog.interfaceVersion}`);
     }

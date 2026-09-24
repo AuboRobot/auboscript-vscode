@@ -39,5 +39,24 @@ export function renderApiContext(catalog: ApiCatalog): string {
     for (const method of module.methods) lines.push(signature(method));
     lines.push('');
   }
+  if (catalog.types?.length) {
+    lines.push('## Public data types', '');
+    for (const type of catalog.types) {
+      if (type.kind === 'record') {
+        lines.push(`### ${type.name}${type.description ? ` — ${type.description}` : ''}`, '');
+        for (const field of type.fields || []) {
+          lines.push(`- \`${field.name}${field.type ? `: ${field.type}` : ''}\`${field.description ? ` — ${field.description}` : ''}`);
+        }
+      } else if (type.kind === 'enum') {
+        lines.push(`### ${type.name}${type.description ? ` — ${type.description}` : ''}`, '');
+        for (const value of type.values || []) {
+          lines.push(`- \`${value.name}${value.value === undefined ? '' : ` = ${value.value}`}\`${value.description ? ` — ${value.description}` : ''}`);
+        }
+      } else {
+        lines.push(`- \`${type.name} = ${type.alias || 'any'}\`${type.description ? ` — ${type.description}` : ''}`);
+      }
+      lines.push('');
+    }
+  }
   return `${lines.join('\n').trim()}\n`;
 }

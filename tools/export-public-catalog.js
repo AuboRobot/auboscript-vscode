@@ -29,6 +29,65 @@ function copyParameter(parameter, field) {
   return result;
 }
 
+function copyType(type, field) {
+  if (!isRecord(type) || typeof type.name !== 'string' ||
+      !['record', 'enum', 'alias'].includes(type.kind)) {
+    throw new Error(`Malformed catalog type: ${field}`);
+  }
+  assertPublicString(type.name, `${field}.name`);
+  const result = { name: type.name, kind: type.kind };
+  if (type.description !== undefined) {
+    if (typeof type.description !== 'string') throw new Error(`Malformed catalog ${field}.description`);
+    assertPublicString(type.description, `${field}.description`);
+    result.description = type.description;
+  }
+  if (type.kind === 'alias') {
+    if (typeof type.alias !== 'string' || !type.alias.trim()) throw new Error(`Malformed catalog ${field}.alias`);
+    assertPublicString(type.alias, `${field}.alias`);
+    result.alias = type.alias;
+  }
+  if (type.kind === 'record' && type.fields !== undefined) {
+    if (!Array.isArray(type.fields)) throw new Error(`Malformed catalog ${field}.fields`);
+    result.fields = type.fields.map((item, index) => {
+      if (!isRecord(item) || typeof item.name !== 'string' || !item.name) {
+        throw new Error(`Malformed catalog type field: ${field}.fields[${index}]`);
+      }
+      assertPublicString(item.name, `${field}.fields[${index}].name`);
+      const copy = { name: item.name };
+      for (const key of ['type', 'description']) {
+        if (item[key] !== undefined) {
+          if (typeof item[key] !== 'string') throw new Error(`Malformed catalog ${field}.fields[${index}].${key}`);
+          assertPublicString(item[key], `${field}.fields[${index}].${key}`);
+          copy[key] = item[key];
+        }
+      }
+      return copy;
+    });
+  }
+  if (type.kind === 'enum' && type.values !== undefined) {
+    if (!Array.isArray(type.values)) throw new Error(`Malformed catalog ${field}.values`);
+    result.values = type.values.map((item, index) => {
+      if (!isRecord(item) || typeof item.name !== 'string' || !item.name ||
+          (item.value !== undefined && typeof item.value !== 'string' && typeof item.value !== 'number')) {
+        throw new Error(`Malformed catalog enum value: ${field}.values[${index}]`);
+      }
+      assertPublicString(item.name, `${field}.values[${index}].name`);
+      const copy = { name: item.name };
+      if (item.value !== undefined) {
+        if (typeof item.value === 'string') assertPublicString(item.value, `${field}.values[${index}].value`);
+        copy.value = item.value;
+      }
+      if (item.description !== undefined) {
+        if (typeof item.description !== 'string') throw new Error(`Malformed catalog ${field}.values[${index}].description`);
+        assertPublicString(item.description, `${field}.values[${index}].description`);
+        copy.description = item.description;
+      }
+      return copy;
+    });
+  }
+  return result;
+}
+
 function exportPublicCatalog(source) {
   if (!isRecord(source) || source.schemaVersion !== 1 ||
       typeof source.interfaceVersion !== 'string' || !Array.isArray(source.modules)) {
@@ -103,6 +162,11 @@ function exportPublicCatalog(source) {
         } : {})
       }
     } : {}),
+    ...(source.types !== undefined ? {
+      types: Array.isArray(source.types)
+        ? source.types.map((type, index) => copyType(type, `types[${index}]`))
+        : (() => { throw new Error('Catalog types are malformed'); })()
+    } : {}),
     modules
   };
 }
@@ -113,7 +177,30 @@ if (require.main === module) {
     console.error('Usage: node tools/export-public-catalog.js <input.json> <catalog.json>');
     process.exitCode = 2;
   } else {
-    const result = exportPublicCatalog(JSON.parse(fs.readFileSync(input, 'utf8')));
+    const source = JSON.parse(fs.readFileSync(input, 'utf8'));
+    // The local catalog is intentionally ignored and may be regenerated from
+    // SDK headers without the public type graph. Reuse the last public output
+    // so a refresh cannot silently remove struct and enum completion.
+    if (source.types === undefined && fs.existsSync(output)) {
+      try {
+        const previous = JSON.parse(fs.readFileSync(output, 'utf8'));
+        if (Array.isArray(previous.types)) source.types = previous.types;
+      } catch {
+        // The normal validation below reports malformed input/output state.
+      }
+    }
+    if (source.types === undefined) {
+      const publicTypes = path.join(__dirname, '..', 'api', 'public-types.json');
+      if (fs.existsSync(publicTypes)) {
+        try {
+          const metadata = JSON.parse(fs.readFileSync(publicTypes, 'utf8'));
+          if (Array.isArray(metadata.types)) source.types = metadata.types;
+        } catch {
+          // Keep the normal catalog validation as the single error surface.
+        }
+      }
+    }
+    const result = exportPublicCatalog(source);
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`);
     console.log(`Exported ${result.modules.reduce((count, module) => count + module.methods.length, 0)} public API methods.`);
