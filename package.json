@@ -1,7 +1,7 @@
 {
   "name": "auboscript-vscode",
   "displayName": "AUBOScript for VS Code",
-  "description": "AUBO Lua script editing with API completion, hover, signatures, and diagnostics.",
+  "description": "AUBO Lua script editing and Python/C++ SDK API support.",
   "version": "0.1.0",
   "publisher": "aubo-robotics",
   "icon": "images/aubo_logo_2.png",
@@ -17,7 +17,10 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:aubo-script",
-    "onLanguage:lua"
+    "onLanguage:lua",
+    "onLanguage:python",
+    "onLanguage:cpp",
+    "onLanguage:objective-cpp"
   ],
   "contributes": {
     "languages": [
@@ -75,6 +78,16 @@
           "type": "string",
           "default": "",
           "description": "Path to an additional AUBO API catalog; overrides the bundled catalog."
+        },
+        "aubo.pythonStubPath": {
+          "type": "string",
+          "default": "",
+          "description": "Directory containing the pyaubo_sdk Python stubs. Leave empty to use the bundled API metadata."
+        },
+        "aubo.cppSdkPath": {
+          "type": "string",
+          "default": "",
+          "description": "AUBO C++ SDK installation directory used to configure C/C++ include paths."
         }
       }
     }
@@ -82,7 +95,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "vscode:prepublish": "npm run compile",
-    "test": "npm run compile && node test/catalog.test.js && node test/catalog-path.test.js && node test/generate-catalog.test.js && node test/update-catalog.test.js && node test/export-public-catalog.test.js && node test/extension.test.js && node test/lua-syntax.test.js && node test/lua-stubs.test.js && node test/api-context.test.js && node test/package.test.js && node test/full-flow.test.js",
+    "test": "npm run compile && node test/catalog.test.js && node test/catalog-path.test.js && node test/generate-catalog.test.js && node test/update-catalog.test.js && node test/export-public-catalog.test.js && node test/multilang.test.js && node test/cpp-sdk.test.js && node test/extension.test.js && node test/lua-syntax.test.js && node test/lua-stubs.test.js && node test/api-context.test.js && node test/package.test.js && node test/full-flow.test.js",
     "generate-catalog": "node tools/generate-catalog.js",
     "export-public-catalog": "node tools/export-public-catalog.js api/catalog.local.json api/catalog.json",
     "update-catalog": "node tools/update-catalog.js",

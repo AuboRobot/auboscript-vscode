@@ -72,6 +72,8 @@ try {
   for (const registration of providers) {
     assert.ok(registration.selector.some((selector) => selector.language === 'lua'));
     assert.ok(registration.selector.some((selector) => selector.language === 'aubo-script'));
+    assert.ok(!registration.selector.some((selector) => selector.language === 'python'));
+    assert.ok(!registration.selector.some((selector) => selector.language === 'cpp'));
   }
 
   writeCatalog('test-sdk-2');

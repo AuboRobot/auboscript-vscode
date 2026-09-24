@@ -42,6 +42,8 @@ assert.deepEqual(files, [
   'README.md',
   'api/catalog.json',
   'api/catalog.schema.json',
+  'api/python/manifest.json',
+  'api/python/pyaubo_sdk/__init__.pyi',
   'images/aubo_logo_2.png',
   'language-configuration.json',
   'out/catalog.js',
@@ -50,6 +52,8 @@ assert.deepEqual(files, [
   'out/lua-syntax.js',
   'out/lua-stubs.js',
   'out/extension.js',
+  'out/multilang.js',
+  'out/cpp-sdk.js',
   'package.json',
   'snippets/aubo-script.json',
   'syntaxes/aubo-script.tmLanguage.json'

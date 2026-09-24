@@ -1,0 +1,14 @@
+{
+  "module": "pyaubo_sdk",
+  "sdkVersion": "0.27.1-rc.4",
+  "stubFile": "pyaubo_sdk/__init__.pyi",
+  "source": "pybind interface metadata",
+  "coverage": {
+    "classes": 59,
+    "moduleFunctions": 2,
+    "notes": [
+      "Signatures use typing.Any where the runtime does not expose a matching Python class.",
+      "Enum member named None is represented as None_ because None is a Python keyword."
+    ]
+  }
+}

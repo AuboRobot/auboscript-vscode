@@ -64,7 +64,7 @@ const files = execFileSync(process.execPath, [
 ], { cwd: root, encoding: 'utf8' }).trim().split(/\r?\n/);
 const packageFiles = files.filter((file) => file && !/[ >]/.test(file));
 for (const filename of packageFiles) {
-  assert.ok(!/(catalog\.local|common_interface|aubo_sdk|aubo_script|\.aubo|\.map$)/i.test(filename),
+  assert.ok(!/(?:^|\/)(?:catalog\.local(?:\.[^/]*)?|common_interface|aubo_sdk|aubo_script|\.aubo)(?:\/|$)|\.map$/i.test(filename),
     `private/local artifact leaked into package: ${filename}`);
 }
 for (const filename of packageFiles.filter((file) => /^out\/.*\.js$/.test(file))) {

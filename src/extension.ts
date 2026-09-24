@@ -9,6 +9,8 @@ import { findCatalogPath } from './catalog-path';
 import { renderApiContext } from './api-context';
 import { findLuaSyntaxIssues } from './lua-syntax';
 import { renderLuaStubs } from './lua-stubs';
+import { preparePythonStubs } from './multilang';
+import { resolveCppSdk } from './cpp-sdk';
 
 function escapeSnippetText(value: string): string {
   return value.replace(/[\\$}]/g, '\\$&');
@@ -73,6 +75,44 @@ function writeLuaStubs(catalog: ApiCatalog): void {
     }
   } catch {
     // Workspace may be read-only; the bundled provider remains available.
+  }
+}
+
+function configuredList(configuration: vscode.WorkspaceConfiguration, key: string): string[] {
+  const value = configuration.get<string[]>(key, []);
+  return Array.isArray(value) ? value : [];
+}
+
+function configureNativeBindings(context: vscode.ExtensionContext): void {
+  for (const folder of vscode.workspace.workspaceFolders || []) {
+    const root = folder.uri.fsPath;
+    const auboConfig = vscode.workspace.getConfiguration('aubo', folder.uri);
+    const configuredStubPath = auboConfig.get<string>('pythonStubPath', '') || '';
+    try {
+      const stubs = preparePythonStubs(context.extensionPath, root, configuredStubPath);
+      const python = vscode.workspace.getConfiguration('python.analysis', folder.uri);
+      const paths = configuredList(python, 'extraPaths');
+      if (python.update && !paths.includes(stubs.directory)) {
+        void python.update('extraPaths', [...paths, stubs.directory], vscode.ConfigurationTarget.WorkspaceFolder)
+          .then(undefined, () => undefined);
+      }
+    } catch (error) {
+      if (configuredStubPath) vscode.window.showWarningMessage(`AUBO Python stubs unavailable: ${String(error)}`);
+    }
+    const configuredSdkPath = auboConfig.get<string>('cppSdkPath', '') || '';
+    if (!configuredSdkPath) continue;
+    try {
+      const sdk = resolveCppSdk(configuredSdkPath);
+      const cpp = vscode.workspace.getConfiguration('C_Cpp.default', folder.uri);
+      const paths = configuredList(cpp, 'includePath');
+      const merged = [...paths, ...sdk.includePaths.filter((item) => !paths.includes(item))];
+      if (cpp.update && merged.length !== paths.length) {
+        void cpp.update('includePath', merged, vscode.ConfigurationTarget.WorkspaceFolder)
+          .then(undefined, () => undefined);
+      }
+    } catch (error) {
+      vscode.window.showWarningMessage(`AUBO C++ SDK unavailable: ${String(error)}`);
+    }
   }
 }
 
@@ -232,6 +272,7 @@ export function activate(context: vscode.ExtensionContext) {
   let catalog = readCatalog(context);
   writeApiContext(catalog);
   writeLuaStubs(catalog);
+  configureNativeBindings(context);
   let providerSubscriptions = registerApiProviders(catalog);
   const sdkStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   sdkStatusBar.name = 'AUBO SDK version';
@@ -241,6 +282,15 @@ export function activate(context: vscode.ExtensionContext) {
     ...registerSyntaxDiagnostics(context),
     sdkStatusBar,
     ...providerSubscriptions,
+    ...(vscode.workspace.onDidChangeConfiguration ? [
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('aubo') || event.affectsConfiguration('python.analysis') ||
+            event.affectsConfiguration('C_Cpp.default')) configureNativeBindings(context);
+      })
+    ] : []),
+    ...(vscode.workspace.onDidChangeWorkspaceFolders ? [
+      vscode.workspace.onDidChangeWorkspaceFolders(() => configureNativeBindings(context))
+    ] : []),
     vscode.commands.registerCommand('aubo.reloadApiCatalog', () => {
       const nextCatalog = readCatalog(context);
       providerSubscriptions.forEach((subscription) => subscription.dispose());
@@ -248,6 +298,7 @@ export function activate(context: vscode.ExtensionContext) {
       providerSubscriptions = registerApiProviders(catalog);
       writeApiContext(catalog);
       writeLuaStubs(catalog);
+      configureNativeBindings(context);
       updateSdkStatusBar(sdkStatusBar, catalog);
       context.subscriptions.push(...providerSubscriptions);
       const validation = catalog.macroValidation ? 'macro validation passed' : 'macro validation unavailable';

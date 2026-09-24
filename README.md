@@ -1,6 +1,6 @@
 # AUBOScript for VS Code
 
-Public VS Code support for AUBO Script/Lua files.
+Public VS Code support for AUBO Script/Lua files and the AUBO SDK Python/C++ APIs.
 
 ## API catalog
 
@@ -32,6 +32,20 @@ npm test
 会提供 API 补全，按 `Ctrl+Space` 可查看，鼠标悬停可查看说明。
 插件也会检查字符串和括号等基础 Lua 语法错误；示教器脚本按
 `require('aubo')`、`sched.select_robot(1)`、`moveJoint(...)` 的实际生成形式编写。
+
+## Python and C++ SDK
+
+The extension bundles typing metadata for the `pyaubo_sdk` module. Install the
+Python extension with Pylance (or Pyright) to use the signatures in `.py` files.
+The metadata is copied to `.aubo/python` when a workspace is open so editor AI
+agents can inspect the same public names.
+
+For C++, install the Microsoft C/C++ extension and set `aubo.cppSdkPath` to an
+AUBO SDK installation directory. The extension discovers the SDK's include
+directory and adds it to the workspace C/C++ include paths; headers and
+libraries stay on the machine where the SDK is installed. Projects using clangd
+or `compile_commands.json` should add the same SDK include directory to their
+build configuration.
 
 ### 配置 API catalog
 
