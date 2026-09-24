@@ -57,11 +57,11 @@ function childDirectories(directory: string): string[] {
 }
 
 function canonical(filename: string): string {
-  try {
-    return fs.realpathSync.native(filename);
-  } catch {
-    return path.resolve(filename);
-  }
+  // Keep the spelling supplied by the user. On Windows, realpathSync.native
+  // can expand an 8.3 path (for example RUNNER~1) while path.resolve keeps
+  // the workspace's configured spelling. Both paths refer to the same SDK,
+  // but returning the configured form avoids unstable settings and tests.
+  return path.resolve(filename);
 }
 
 /**
