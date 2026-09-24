@@ -77,7 +77,8 @@ class PythonStubTests(unittest.TestCase):
         self.assertEqual(len(named.args.defaults), 5)
         push = self.methods("OutputBuilder", "push")
         self.assertEqual(len(push), 5)
-        self.assertEqual(len({ast.unparse(node.args.args[1].annotation) for node in push}), 5)
+        self.assertEqual(len({ast.unparse((node.args.posonlyargs + node.args.args)[1].annotation)
+                              for node in push}), 5)
         self.assertTrue(all("typing.overload" in [ast.unparse(d) for d in n.decorator_list]
                             for n in push))
 
