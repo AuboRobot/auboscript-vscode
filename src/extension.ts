@@ -9,7 +9,10 @@ import { findCatalogPath } from './catalog-path';
 import { renderApiContext } from './api-context';
 import { findLuaSyntaxIssues } from './lua-syntax';
 import { renderLuaStubs } from './lua-stubs';
-import { inferPythonVariables, parsePythonStubs, preparePythonStubs, pythonMethods, PythonStubCatalog } from './multilang';
+import {
+  inferPythonVariables, parsePythonStubs, preparePythonStubs, pythonExpressionType, pythonMethods,
+  pythonProperties, PythonStubCatalog
+} from './multilang';
 import { resolveCppSdk } from './cpp-sdk';
 
 function escapeSnippetText(value: string): string {
@@ -132,9 +135,9 @@ class PythonCompletionProvider implements vscode.CompletionItemProvider {
 
   provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
     const text = document.lineAt(position.line).text.slice(0, position.character);
-    const access = text.match(/(?:^|[^A-Za-z0-9_])((?:[A-Za-z_]\w*\.)*[A-Za-z_]\w*)\.([A-Za-z_]\w*)?$/);
+    const access = text.match(/(?:^|[^A-Za-z0-9_])((?:[A-Za-z_]\w*(?:\s*\([^()]*\))?)(?:\s*\.\s*[A-Za-z_]\w*(?:\s*\([^()]*\))?)*)\s*\.\s*([A-Za-z_]\w*)?$/);
     if (!access) return [];
-    const receiver = access[1];
+    const receiver = access[1].trim();
     const prefix = access[2] || '';
     if (receiver === 'pyaubo_sdk') {
       return Object.keys(this.catalog.classes)
@@ -142,16 +145,60 @@ class PythonCompletionProvider implements vscode.CompletionItemProvider {
         .map((name) => new vscode.CompletionItem(name, vscode.CompletionItemKind.Class));
     }
     const variables = inferPythonVariables(document.getText(), this.catalog);
-    const className = variables[receiver];
+    const className = pythonExpressionType(receiver, variables, this.catalog);
     if (!className) return [];
-    return Object.values(pythonMethods(this.catalog, className))
+    const fields = Object.entries(pythonProperties(this.catalog, className))
+      .filter(([name]) => name.toLowerCase().includes(prefix.toLowerCase()))
+      .map(([name, type]) => {
+        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field);
+        item.detail = `field: ${type}`;
+        item.insertText = name;
+        return item;
+      });
+    const methods = Object.values(pythonMethods(this.catalog, className))
       .filter((method) => method.name.toLowerCase().includes(prefix.toLowerCase()))
       .map((method) => {
         const item = new vscode.CompletionItem(method.name, vscode.CompletionItemKind.Method);
-        item.detail = method.returnType ? `returns ${method.returnType}` : 'AUBO Python SDK method';
+        const parameters = method.parameters.map((parameter) =>
+          `${parameter.name}: ${parameter.type || 'Any'}`).join(', ');
+        item.detail = `${method.name}(${parameters})${method.returnType ? ` -> ${method.returnType}` : ''}`;
         item.insertText = new vscode.SnippetString(methodSnippet(method));
         return item;
       });
+    return [...fields, ...methods];
+  }
+}
+
+class PythonSignatureProvider implements vscode.SignatureHelpProvider {
+  constructor(private readonly catalog: PythonStubCatalog) {}
+
+  provideSignatureHelp(document: vscode.TextDocument, position: vscode.Position) {
+    const text = document.lineAt(position.line).text.slice(0, position.character);
+    const call = text.match(/((?:[A-Za-z_]\w*(?:\s*\([^()]*\))?)(?:\s*\.\s*[A-Za-z_]\w*(?:\s*\([^()]*\))?)*)\s*\(\s*([^()]*)$/);
+    if (!call) return undefined;
+    const target = call[1].trim();
+    const targetParts = target.split(/\s*\.\s*/);
+    const methodName = targetParts.pop()!;
+    const variables = inferPythonVariables(document.getText(), this.catalog);
+    let method: ReturnType<typeof pythonMethods>[string] | undefined;
+    if (targetParts.length === 1 && targetParts[0] === 'pyaubo_sdk') {
+      method = pythonMethods(this.catalog, methodName)["__init__"];
+    } else {
+      const receiver = targetParts.join('.');
+      const className = pythonExpressionType(receiver, variables, this.catalog);
+      if (!className) return undefined;
+      method = pythonMethods(this.catalog, className)[methodName];
+    }
+    if (!method) return undefined;
+    const signature = new vscode.SignatureInformation(`${method.name}(${method.parameters
+      .map((parameter) => `${parameter.name}: ${parameter.type || 'Any'}`).join(', ')})`);
+    signature.parameters = method.parameters.map((parameter) =>
+      new vscode.ParameterInformation(parameter.name, parameter.type || 'Any'));
+    const help = new vscode.SignatureHelp();
+    help.signatures = [signature];
+    help.activeSignature = 0;
+    help.activeParameter = (call[2].match(/,/g) || []).length;
+    return help;
   }
 }
 
@@ -263,6 +310,8 @@ function registerApiProviders(catalog: ApiCatalog, pythonCatalog?: PythonStubCat
   if (pythonCatalog) {
     registrations.push(vscode.languages.registerCompletionItemProvider(
       [{ language: 'python', scheme: 'file' }], new PythonCompletionProvider(pythonCatalog), '.'));
+    registrations.push(vscode.languages.registerSignatureHelpProvider(
+      [{ language: 'python', scheme: 'file' }], new PythonSignatureProvider(pythonCatalog), '(', ','));
   }
   return registrations;
 }

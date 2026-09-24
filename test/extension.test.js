@@ -32,12 +32,21 @@ function registerProvider(selector, provider, ...triggers) {
 const vscode = {
   StatusBarAlignment: { Right: 2 },
   ConfigurationTarget: { Global: 1, WorkspaceFolder: 3 },
-  CompletionItemKind: { Class: 7, Method: 2 },
+  CompletionItemKind: { Class: 7, Method: 2, Field: 5 },
   CompletionItem: class {
     constructor(label, kind) { this.label = label; this.kind = kind; }
   },
   SnippetString: class {
     constructor(value) { this.value = value; }
+  },
+  SignatureInformation: class {
+    constructor(label) { this.label = label; this.parameters = []; }
+  },
+  ParameterInformation: class {
+    constructor(label, documentation) { this.label = label; this.documentation = documentation; }
+  },
+  SignatureHelp: class {
+    constructor() { this.signatures = []; this.activeSignature = 0; this.activeParameter = 0; }
   },
   workspace: { workspaceFolders: [], getConfiguration: () => ({ get: () => '' }) },
   window: {
@@ -80,7 +89,7 @@ try {
   assert.match(item.tooltip, /test-sdk-1/);
   assert.equal(item.visible, true);
   assert.ok(context.subscriptions.includes(item), 'status bar must be disposed with the extension');
-  assert.equal(providers.length, 4);
+  assert.equal(providers.length, 5);
   for (const registration of providers.slice(0, 3)) {
     assert.ok(registration.selector.some((selector) => selector.language === 'lua'));
     assert.ok(registration.selector.some((selector) => selector.language === 'aubo-script'));
@@ -97,16 +106,53 @@ try {
   };
   const pythonItems = pythonProvider.provider.provideCompletionItems(pythonDocument,
     { line: 1, character: 7 });
-  assert.ok(pythonItems.some((item) => item.label === 'getRobotInterface'),
+  assert.ok(pythonItems.some((item) => item.label === 'getRobotInterface' && /arg0: str/.test(item.detail)),
     'Python provider must expose inherited SDK methods');
+  const structDocument = {
+    languageId: 'python',
+    lineAt() { return { text: 'params.' }; },
+    getText() {
+      return 'params = pyaubo_sdk.SafetyParams()\nparams.';
+    }
+  };
+  const structItems = pythonProvider.provider.provideCompletionItems(structDocument,
+    { line: 1, character: 7 });
+  assert.ok(structItems.some((item) => item.label === 'tcp_force' && item.kind === vscode.CompletionItemKind.Field),
+    'Python provider must expose SDK struct fields');
+  const chainedDocument = {
+    languageId: 'python',
+    lineAt() { return { text: 'robot.getRobotConfig().' }; },
+    getText() {
+      return "client = pyaubo_sdk.RpcClient()\nrobot = client.getRobotInterface('rob1')\nrobot.getRobotConfig().";
+    }
+  };
+  const chainedItems = pythonProvider.provider.provideCompletionItems(chainedDocument,
+    { line: 2, character: chainedDocument.lineAt().text.length });
+  assert.ok(chainedItems.some((item) => item.label === 'getDof'),
+    'Python provider must resolve chained SDK calls');
+  const pythonSignature = providers.find((registration) =>
+    registration.selector.some((selector) => selector.language === 'python') &&
+    typeof registration.provider.provideSignatureHelp === 'function');
+  const callDocument = {
+    languageId: 'python',
+    lineAt() { return { text: "robot = client.getRobotInterface('rob1', " }; },
+    getText() {
+      return "client = pyaubo_sdk.RpcClient()\nrobot = client.getRobotInterface('rob1', ";
+    }
+  };
+  const signature = pythonSignature.provider.provideSignatureHelp(callDocument,
+    { line: 1, character: callDocument.lineAt().text.length });
+  assert.ok(signature);
+  assert.match(signature.signatures[0].label, /arg0: str/);
+  assert.equal(signature.activeParameter, 1);
 
   writeCatalog('test-sdk-2');
   commands.get('aubo.reloadApiCatalog')();
   assert.equal(statusItems.length, 1, 'reload must reuse the status bar');
   assert.equal(item.text, 'AUBO SDK test-sdk-2');
   assert.match(item.tooltip, /test-sdk-2/);
-  assert.ok(providers.slice(0, 4).every((provider) => provider.disposed));
-  assert.equal(providers.length, 8);
+  assert.ok(providers.slice(0, 5).every((provider) => provider.disposed));
+  assert.equal(providers.length, 10);
   context.subscriptions.forEach((subscription) => subscription.dispose());
   assert.equal(item.disposed, true);
   assert.ok(providers.every((provider) => provider.disposed));

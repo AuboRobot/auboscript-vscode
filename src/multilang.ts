@@ -21,6 +21,7 @@ export interface PythonClassInfo {
   name: string;
   base?: string;
   methods: Record<string, PythonMethodInfo>;
+  properties: Record<string, string>;
 }
 
 export interface PythonStubCatalog {
@@ -64,25 +65,44 @@ export function parsePythonStubs(source: string): PythonStubCatalog {
   const classes: Record<string, PythonClassInfo> = {};
   const lines = source.split(/\r?\n/);
   let current: PythonClassInfo | undefined;
+  let propertyDecorator = false;
   for (const line of lines) {
     const classMatch = line.match(/^class\s+([A-Za-z_]\w*)(?:\(([^)]*)\))?:/);
     if (classMatch) {
       current = {
         name: classMatch[1],
         base: classMatch[2]?.split(',')[0].trim() || undefined,
-        methods: {}
+        methods: {},
+        properties: {}
       };
       classes[current.name] = current;
+      propertyDecorator = false;
       continue;
     }
     if (!current) continue;
+    if (/^\s*@property\s*$/.test(line)) {
+      propertyDecorator = true;
+      continue;
+    }
+    const propertyMatch = line.match(/^\s{4}([A-Za-z_]\w*):\s*(.+)$/);
+    if (propertyMatch) {
+      current.properties[propertyMatch[1]] = propertyMatch[2].trim();
+      propertyDecorator = false;
+      continue;
+    }
     const methodMatch = line.match(/^\s+def\s+([A-Za-z_]\w*)\((.*)\)\s*(?:->\s*([^:]+))?:\s*$/);
-    if (!methodMatch) continue;
-    current.methods[methodMatch[1]] = {
-      name: methodMatch[1],
-      parameters: parsePythonParameters(methodMatch[2]),
-      returnType: methodMatch[3]?.trim()
-    };
+    if (methodMatch) {
+      const method = {
+        name: methodMatch[1],
+        parameters: parsePythonParameters(methodMatch[2]),
+        returnType: methodMatch[3]?.trim()
+      };
+      if (propertyDecorator) current.properties[method.name] = method.returnType || 'typing.Any';
+      else current.methods[method.name] = method;
+      propertyDecorator = false;
+      continue;
+    }
+    if (line.trim() && !/^\s*#/.test(line)) propertyDecorator = false;
   }
   return { classes };
 }
@@ -98,22 +118,81 @@ export function pythonMethods(catalog: PythonStubCatalog, className: string,
   };
 }
 
-function pythonReturnType(catalog: PythonStubCatalog, className: string, methodName: string): string | undefined {
-  return pythonMethods(catalog, className)[methodName]?.returnType
-    ?.replace(/^typing\.(?:Optional|Union)\[(.*)\]$/, '$1')
-    .split(',')[0].trim();
+export function pythonProperties(catalog: PythonStubCatalog, className: string,
+  seen = new Set<string>()): Record<string, string> {
+  const classInfo = catalog.classes[className];
+  if (!classInfo || seen.has(className)) return {};
+  seen.add(className);
+  return {
+    ...(classInfo.base ? pythonProperties(catalog, classInfo.base, seen) : {}),
+    ...classInfo.properties
+  };
+}
+
+function pythonTypeName(catalog: PythonStubCatalog, annotation?: string): string | undefined {
+  if (!annotation) return undefined;
+  let type = annotation.trim().replace(/^typing\./, '');
+  while (/^(?:Optional|Union)\s*\[/.test(type)) {
+    type = type.replace(/^(?:Optional|Union)\s*\[\s*/, '').replace(/\]\s*$/, '').split(',')[0].trim();
+  }
+  const direct = type.match(/^([A-Za-z_]\w*)$/)?.[1];
+  if (direct && catalog.classes[direct]) return direct;
+  const nested = type.match(/\[\s*([A-Za-z_]\w*)/);
+  return nested && catalog.classes[nested[1]] ? nested[1] : undefined;
+}
+
+function pythonExpressionParts(expression: string): string[] | undefined {
+  const source = expression.trim();
+  if (!source) return undefined;
+  const parts: string[] = [];
+  let start = 0;
+  let depth = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    if ('([{'.includes(character)) depth += 1;
+    else if (')]}'.includes(character)) depth -= 1;
+    else if (character === '.' && depth === 0) {
+      parts.push(source.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  parts.push(source.slice(start).trim());
+  return parts.every((part) => /^[A-Za-z_]\w*(?:\s*\([^()]*\))?$/.test(part)) ? parts : undefined;
+}
+
+/** Resolve a small, side-effect-free subset of Python expressions used by SDK access chains. */
+export function pythonExpressionType(expression: string, variables: Record<string, string>,
+  catalog: PythonStubCatalog): string | undefined {
+  const constructor = expression.trim().match(/^pyaubo_sdk\.([A-Za-z_]\w*)\s*\(/);
+  if (constructor && catalog.classes[constructor[1]]) return constructor[1];
+  const parts = pythonExpressionParts(expression);
+  if (!parts || !parts.length) return undefined;
+  const first = parts.shift()!;
+  let className = variables[first] || (catalog.classes[first] ? first : undefined);
+  if (!className) return undefined;
+  for (const part of parts) {
+    const call = part.match(/^([A-Za-z_]\w*)\s*\(/);
+    if (call) {
+      className = pythonTypeName(catalog, pythonMethods(catalog, className)[call[1]]?.returnType);
+    } else {
+      className = pythonTypeName(catalog, pythonProperties(catalog, className)[part]);
+    }
+    if (!className) return undefined;
+  }
+  return className;
+}
+
+function pythonAssignmentExpression(source: string): Array<[string, string]> {
+  return [...source.matchAll(/\b([A-Za-z_]\w*)\s*=\s*([^\n;#]+)/g)]
+    .map((match) => [match[1], match[2].trim()]);
 }
 
 export function inferPythonVariables(source: string, catalog: PythonStubCatalog): Record<string, string> {
   const variables: Record<string, string> = {};
-  for (let pass = 0; pass <= 3; pass += 1) {
-    for (const match of source.matchAll(/\b([A-Za-z_]\w*)\s*=\s*(?:pyaubo_sdk\.)?([A-Za-z_]\w*)\s*\(/g)) {
-      if (catalog.classes[match[2]]) variables[match[1]] = match[2];
-    }
-    for (const match of source.matchAll(/\b([A-Za-z_]\w*)\s*=\s*([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*\(/g)) {
-      const receiverType = variables[match[2]];
-      const returnType = receiverType && pythonReturnType(catalog, receiverType, match[3]);
-      if (returnType && catalog.classes[returnType]) variables[match[1]] = returnType;
+  for (let pass = 0; pass <= 5; pass += 1) {
+    for (const [name, expression] of pythonAssignmentExpression(source)) {
+      const className = pythonExpressionType(expression, variables, catalog);
+      if (className) variables[name] = className;
     }
   }
   return variables;

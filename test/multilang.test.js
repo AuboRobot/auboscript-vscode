@@ -11,6 +11,14 @@ assert.ok(parsed.classes.AuboApi.methods.getRobotInterface);
 assert.equal(parsed.classes.AuboApi.methods.getRobotInterface.returnType, 'RobotInterface');
 assert.equal(parsed.classes.RobotInterface.methods.getMotionControl.returnType, 'MotionControl');
 assert.equal(parsed.classes.MotionControl.methods.moveJoint.parameters.length, 5);
+assert.equal(parsed.classes.SafetyParams.properties.tcp_force, 'float');
+assert.equal(parsed.classes.RobotSafetyParameterRange.properties.params, 'list[list[SafetyParams]]');
+assert.equal(parsed.classes.ConveyorCalibResult.properties.error_code, 'int');
+assert.deepEqual(native.pythonProperties(parsed, 'RobotSafetyParameterRange').params, 'list[list[SafetyParams]]');
+assert.equal(native.pythonExpressionType(
+  'robot.getRobotConfig()', { robot: 'RobotInterface' }, parsed), 'RobotConfig');
+assert.equal(native.pythonExpressionType(
+  'robot.getRobotConfig().getSafetyParametersCheckSum()', { robot: 'RobotInterface' }, parsed), undefined);
 assert.deepEqual(native.inferPythonVariables(
   'client = pyaubo_sdk.RpcClient()\nrobot = client.getRobotInterface("rob1")\nmotion = robot.getMotionControl()\n', parsed
 ), { client: 'RpcClient', robot: 'RobotInterface', motion: 'MotionControl' });
