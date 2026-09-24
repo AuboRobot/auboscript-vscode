@@ -13,6 +13,10 @@ function writeCatalog(version) {
   }));
 }
 writeCatalog('test-sdk-1');
+const bundledPython = path.join(root, 'api', 'python', 'pyaubo_sdk');
+fs.mkdirSync(bundledPython, { recursive: true });
+fs.copyFileSync(path.resolve(__dirname, '..', 'api/python/pyaubo_sdk/__init__.pyi'),
+  path.join(bundledPython, '__init__.pyi'));
 
 const commands = new Map();
 const providers = [];
@@ -27,6 +31,14 @@ function registerProvider(selector, provider, ...triggers) {
 }
 const vscode = {
   StatusBarAlignment: { Right: 2 },
+  ConfigurationTarget: { Global: 1, WorkspaceFolder: 3 },
+  CompletionItemKind: { Class: 7, Method: 2 },
+  CompletionItem: class {
+    constructor(label, kind) { this.label = label; this.kind = kind; }
+  },
+  SnippetString: class {
+    constructor(value) { this.value = value; }
+  },
   workspace: { workspaceFolders: [], getConfiguration: () => ({ get: () => '' }) },
   window: {
     createStatusBarItem(alignment, priority) {
@@ -35,7 +47,7 @@ const vscode = {
       statusItems.push(item);
       return item;
     },
-    showWarningMessage(message) { assert.fail(message); },
+    showWarningMessage() {},
     showInformationMessage() {}
   },
   languages: {
@@ -68,21 +80,33 @@ try {
   assert.match(item.tooltip, /test-sdk-1/);
   assert.equal(item.visible, true);
   assert.ok(context.subscriptions.includes(item), 'status bar must be disposed with the extension');
-  assert.equal(providers.length, 3);
-  for (const registration of providers) {
+  assert.equal(providers.length, 4);
+  for (const registration of providers.slice(0, 3)) {
     assert.ok(registration.selector.some((selector) => selector.language === 'lua'));
     assert.ok(registration.selector.some((selector) => selector.language === 'aubo-script'));
-    assert.ok(!registration.selector.some((selector) => selector.language === 'python'));
     assert.ok(!registration.selector.some((selector) => selector.language === 'cpp'));
   }
+  const pythonProvider = providers.find((registration) =>
+    registration.selector.some((selector) => selector.language === 'python'));
+  const pythonDocument = {
+    languageId: 'python',
+    lineAt() { return { text: 'client.' }; },
+    getText() {
+      return 'client = pyaubo_sdk.RpcClient()\nclient.';
+    }
+  };
+  const pythonItems = pythonProvider.provider.provideCompletionItems(pythonDocument,
+    { line: 1, character: 7 });
+  assert.ok(pythonItems.some((item) => item.label === 'getRobotInterface'),
+    'Python provider must expose inherited SDK methods');
 
   writeCatalog('test-sdk-2');
   commands.get('aubo.reloadApiCatalog')();
   assert.equal(statusItems.length, 1, 'reload must reuse the status bar');
   assert.equal(item.text, 'AUBO SDK test-sdk-2');
   assert.match(item.tooltip, /test-sdk-2/);
-  assert.ok(providers.slice(0, 3).every((provider) => provider.disposed));
-  assert.equal(providers.length, 6);
+  assert.ok(providers.slice(0, 4).every((provider) => provider.disposed));
+  assert.equal(providers.length, 8);
   context.subscriptions.forEach((subscription) => subscription.dispose());
   assert.equal(item.disposed, true);
   assert.ok(providers.every((provider) => provider.disposed));

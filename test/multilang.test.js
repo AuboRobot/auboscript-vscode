@@ -3,8 +3,18 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const native = require('../out/multilang.js');
-
 const publicStub = fs.readFileSync(path.join(__dirname, '..', 'api', 'python', 'pyaubo_sdk', '__init__.pyi'), 'utf8');
+
+const parsed = native.parsePythonStubs(publicStub);
+assert.ok(parsed.classes.RpcClient);
+assert.ok(parsed.classes.AuboApi.methods.getRobotInterface);
+assert.equal(parsed.classes.AuboApi.methods.getRobotInterface.returnType, 'RobotInterface');
+assert.equal(parsed.classes.RobotInterface.methods.getMotionControl.returnType, 'MotionControl');
+assert.equal(parsed.classes.MotionControl.methods.moveJoint.parameters.length, 5);
+assert.deepEqual(native.inferPythonVariables(
+  'client = pyaubo_sdk.RpcClient()\nrobot = client.getRobotInterface("rob1")\nmotion = robot.getMotionControl()\n', parsed
+), { client: 'RpcClient', robot: 'RobotInterface', motion: 'MotionControl' });
+
 assert.match(publicStub, /class RpcClient(?:\([^)]*\))?:/);
 assert.match(publicStub, /def getRobotInterface\(self, arg0: str, \/\) -> RobotInterface/);
 assert.match(publicStub, /class MotionControl:/);

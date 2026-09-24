@@ -9,7 +9,7 @@ import { findCatalogPath } from './catalog-path';
 import { renderApiContext } from './api-context';
 import { findLuaSyntaxIssues } from './lua-syntax';
 import { renderLuaStubs } from './lua-stubs';
-import { preparePythonStubs } from './multilang';
+import { inferPythonVariables, parsePythonStubs, preparePythonStubs, pythonMethods, PythonStubCatalog } from './multilang';
 import { resolveCppSdk } from './cpp-sdk';
 
 function escapeSnippetText(value: string): string {
@@ -83,36 +83,75 @@ function configuredList(configuration: vscode.WorkspaceConfiguration, key: strin
   return Array.isArray(value) ? value : [];
 }
 
-function configureNativeBindings(context: vscode.ExtensionContext): void {
-  for (const folder of vscode.workspace.workspaceFolders || []) {
-    const root = folder.uri.fsPath;
-    const auboConfig = vscode.workspace.getConfiguration('aubo', folder.uri);
+function configureNativeBindings(context: vscode.ExtensionContext): PythonStubCatalog | undefined {
+  const folders = vscode.workspace.workspaceFolders || [];
+  const targets = folders.length
+    ? folders.map((folder) => ({ root: folder.uri.fsPath, uri: folder.uri,
+      target: vscode.ConfigurationTarget.WorkspaceFolder }))
+    : [{ root: context.globalStorageUri.fsPath, uri: undefined,
+      target: vscode.ConfigurationTarget.Global }];
+  let pythonCatalog: PythonStubCatalog | undefined;
+  for (const target of targets) {
+    const auboConfig = vscode.workspace.getConfiguration('aubo', target.uri);
     const configuredStubPath = auboConfig.get<string>('pythonStubPath', '') || '';
     try {
-      const stubs = preparePythonStubs(context.extensionPath, root, configuredStubPath);
-      const python = vscode.workspace.getConfiguration('python.analysis', folder.uri);
+      const stubs = preparePythonStubs(context.extensionPath, target.root, configuredStubPath);
+      if (!pythonCatalog) {
+        const stubFile = path.join(stubs.directory, 'pyaubo_sdk', '__init__.pyi');
+        pythonCatalog = parsePythonStubs(fs.readFileSync(stubFile, 'utf8'));
+      }
+      const python = vscode.workspace.getConfiguration('python.analysis', target.uri);
       const paths = configuredList(python, 'extraPaths');
       if (python.update && !paths.includes(stubs.directory)) {
-        void python.update('extraPaths', [...paths, stubs.directory], vscode.ConfigurationTarget.WorkspaceFolder)
+        void python.update('extraPaths', [...paths, stubs.directory], target.target)
           .then(undefined, () => undefined);
       }
     } catch (error) {
-      if (configuredStubPath) vscode.window.showWarningMessage(`AUBO Python stubs unavailable: ${String(error)}`);
+      vscode.window.showWarningMessage(`AUBO Python API metadata unavailable: ${String(error)}`);
     }
     const configuredSdkPath = auboConfig.get<string>('cppSdkPath', '') || '';
     if (!configuredSdkPath) continue;
     try {
       const sdk = resolveCppSdk(configuredSdkPath);
-      const cpp = vscode.workspace.getConfiguration('C_Cpp.default', folder.uri);
+      const cpp = vscode.workspace.getConfiguration('C_Cpp.default', target.uri);
       const paths = configuredList(cpp, 'includePath');
       const merged = [...paths, ...sdk.includePaths.filter((item) => !paths.includes(item))];
       if (cpp.update && merged.length !== paths.length) {
-        void cpp.update('includePath', merged, vscode.ConfigurationTarget.WorkspaceFolder)
+        void cpp.update('includePath', merged, target.target)
           .then(undefined, () => undefined);
       }
     } catch (error) {
       vscode.window.showWarningMessage(`AUBO C++ SDK unavailable: ${String(error)}`);
     }
+  }
+  return pythonCatalog;
+}
+
+class PythonCompletionProvider implements vscode.CompletionItemProvider {
+  constructor(private readonly catalog: PythonStubCatalog) {}
+
+  provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+    const text = document.lineAt(position.line).text.slice(0, position.character);
+    const access = text.match(/(?:^|[^A-Za-z0-9_])((?:[A-Za-z_]\w*\.)*[A-Za-z_]\w*)\.([A-Za-z_]\w*)?$/);
+    if (!access) return [];
+    const receiver = access[1];
+    const prefix = access[2] || '';
+    if (receiver === 'pyaubo_sdk') {
+      return Object.keys(this.catalog.classes)
+        .filter((name) => name.toLowerCase().includes(prefix.toLowerCase()))
+        .map((name) => new vscode.CompletionItem(name, vscode.CompletionItemKind.Class));
+    }
+    const variables = inferPythonVariables(document.getText(), this.catalog);
+    const className = variables[receiver];
+    if (!className) return [];
+    return Object.values(pythonMethods(this.catalog, className))
+      .filter((method) => method.name.toLowerCase().includes(prefix.toLowerCase()))
+      .map((method) => {
+        const item = new vscode.CompletionItem(method.name, vscode.CompletionItemKind.Method);
+        item.detail = method.returnType ? `returns ${method.returnType}` : 'AUBO Python SDK method';
+        item.insertText = new vscode.SnippetString(methodSnippet(method));
+        return item;
+      });
   }
 }
 
@@ -211,16 +250,21 @@ class ApiSignatureProvider implements vscode.SignatureHelpProvider {
   }
 }
 
-function registerApiProviders(catalog: ApiCatalog): vscode.Disposable[] {
+function registerApiProviders(catalog: ApiCatalog, pythonCatalog?: PythonStubCatalog): vscode.Disposable[] {
   const selector: vscode.DocumentSelector = [
     { language: 'aubo-script', scheme: 'file' },
     { language: 'lua', scheme: 'file' }
   ];
-  return [
+  const registrations: vscode.Disposable[] = [
     vscode.languages.registerCompletionItemProvider(selector, new ApiCompletionProvider(catalog), '.', ':', '('),
     vscode.languages.registerHoverProvider(selector, new ApiHoverProvider(catalog)),
     vscode.languages.registerSignatureHelpProvider(selector, new ApiSignatureProvider(catalog), '(', ',')
   ];
+  if (pythonCatalog) {
+    registrations.push(vscode.languages.registerCompletionItemProvider(
+      [{ language: 'python', scheme: 'file' }], new PythonCompletionProvider(pythonCatalog), '.'));
+  }
+  return registrations;
 }
 
 function catalogMethodCount(catalog: ApiCatalog): number {
@@ -272,8 +316,8 @@ export function activate(context: vscode.ExtensionContext) {
   let catalog = readCatalog(context);
   writeApiContext(catalog);
   writeLuaStubs(catalog);
-  configureNativeBindings(context);
-  let providerSubscriptions = registerApiProviders(catalog);
+  let pythonCatalog = configureNativeBindings(context);
+  let providerSubscriptions = registerApiProviders(catalog, pythonCatalog);
   const sdkStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   sdkStatusBar.name = 'AUBO SDK version';
   updateSdkStatusBar(sdkStatusBar, catalog);
@@ -295,10 +339,10 @@ export function activate(context: vscode.ExtensionContext) {
       const nextCatalog = readCatalog(context);
       providerSubscriptions.forEach((subscription) => subscription.dispose());
       catalog = nextCatalog;
-      providerSubscriptions = registerApiProviders(catalog);
+      pythonCatalog = configureNativeBindings(context);
+      providerSubscriptions = registerApiProviders(catalog, pythonCatalog);
       writeApiContext(catalog);
       writeLuaStubs(catalog);
-      configureNativeBindings(context);
       updateSdkStatusBar(sdkStatusBar, catalog);
       context.subscriptions.push(...providerSubscriptions);
       const validation = catalog.macroValidation ? 'macro validation passed' : 'macro validation unavailable';
