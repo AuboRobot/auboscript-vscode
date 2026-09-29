@@ -11,8 +11,11 @@
 !out/lua-syntax.js
 !out/lua-stubs.js
 !out/extension.js
+!out/multilang.js
+!out/cpp-sdk.js
 !api/catalog.json
 !api/catalog.schema.json
+!api/python/**
 !language-configuration.json
 !syntaxes/aubo-script.tmLanguage.json
 !snippets/aubo-script.json

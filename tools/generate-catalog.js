@@ -37,6 +37,7 @@ function buildCatalog(source, binding = 'javascript') {
           ? { interfaceVersion: validation.interfaceVersion } : {})
       }
     } : {}),
+    ...(Array.isArray(source.types) ? { types: source.types } : {}),
     modules: [module]
   };
 }

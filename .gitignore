@@ -9,7 +9,7 @@ api/catalog.local.json
 # Keep only the portable extension debug launcher; editor machine settings stay local.
 .vscode/*
 !.vscode/launch.json
-docs/superpowers/
+docs/
 .env
 .env.*
 !.env.example
