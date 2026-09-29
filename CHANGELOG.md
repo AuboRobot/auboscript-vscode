@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Python typing metadata for `pyaubo_sdk`, with automatic workspace setup.
 - Public SDK records, aliases, enum members, nested fields, and overload-aware

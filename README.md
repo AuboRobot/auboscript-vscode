@@ -92,12 +92,12 @@ npm run package
 ```
 
 然后在 VS Code 中选择 **Extensions: Install from VSIX...**，打开生成的
-`auboscript-vscode-0.1.0.vsix`。
+`auboscript-vscode-0.2.0.vsix`。
 
 也可以使用 VS Code 命令行安装：
 
 ```bash
-code --install-extension ./auboscript-vscode-0.1.0.vsix
+code --install-extension ./auboscript-vscode-0.2.0.vsix
 ```
 
 Windows 用户不需要安装 Node.js 才能使用 VSIX。将 VSIX 文件复制到 Windows
@@ -106,7 +106,7 @@ VSIX...**，选中该文件；安装完成后执行 **Developer: Reload Window**
 也可以在 PowerShell 中运行：
 
 ```powershell
-code --install-extension "$PWD\auboscript-vscode-0.1.0.vsix" --force
+code --install-extension "$PWD\auboscript-vscode-0.2.0.vsix" --force
 ```
 
 安装后执行 **Developer: Reload Window**，打开 `.lua` 文件。只有本地覆盖用的

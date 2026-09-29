@@ -2,7 +2,7 @@
   "name": "auboscript-vscode",
   "displayName": "AUBOScript for VS Code",
   "description": "AUBO Lua script editing and Python/C++ SDK API support.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "aubo-robotics",
   "icon": "images/aubo_logo_2.png",
   "license": "MIT",
